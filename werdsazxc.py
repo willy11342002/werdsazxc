@@ -11,6 +11,7 @@ logger = logging.getLogger('Tools')
 
 
 class Dict(dict):
+    # 實體化時將所有子物件也實體化為JSLike Dict物件
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for key, value in self.items():
@@ -48,6 +49,7 @@ def log(func):
         # 執行函數
         try:
             result = func(*args, **kw)
+        # 紀錄報錯訊息, 紀錄後依舊拋出錯誤
         except Exception as e:
             logger.error(f'{func.__name__} 錯誤: {e.__class__.__name__} {e}')
             logger.error('\n' + traceback.format_exc())
