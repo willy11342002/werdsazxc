@@ -60,3 +60,6 @@ def log(func):
         return result
     return wrapper
 
+
+def sub_dict(dic, keys):
+    return {k:v for k,v in dic.items() if k in keys}
