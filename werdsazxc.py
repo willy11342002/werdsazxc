@@ -19,7 +19,7 @@ class Dict(dict):
                 self[key] = Dict(value)
             if type(value) == list:
                 self[key] = [
-                    Dict(v) if isinstance(value, dict) else v
+                    Dict(v) if isinstance(v, dict) else v
                     for v in value
                 ]
 
