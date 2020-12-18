@@ -23,14 +23,16 @@ class Dict(dict):
                     for v in value
                 ]
 
+    def sub(self, keys):
+        return {k: v for k, v in self.items() if k in keys}
+
     def __getattr__(self, key):
-        if key.startswith('_'):
-            return dict.__getattr__(self, key)
-        return self.get(key)
+        try:
+            return self.__getattribute__(key)
+        except AttributeError as e:
+            return self.get(key)
 
     def __setattr__(self, key, value):
-        if key.startswith('_'):
-            return dict.__setattr__(self, key, value)
         self[key] = value
 
     def __delattr__(self, key):
@@ -60,6 +62,3 @@ def log(func):
         return result
     return wrapper
 
-
-def sub_dict(dic, keys):
-    return {k:v for k,v in dic.items() if k in keys}

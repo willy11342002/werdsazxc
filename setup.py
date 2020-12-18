@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     url='',
     name='werdsazxc',
-    version='1.0.2',
+    version='1.1.0',
     description='Tools For Improve Effeciveness Of Project Develop',
     author='Werdsazxc',
     author_email='willy11342002@gmail.com',
