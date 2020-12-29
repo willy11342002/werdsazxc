@@ -1,9 +1,12 @@
+from random import randint
+from Crypto.Cipher import AES
 from inspect import signature
 from functools import wraps
 import traceback
-import requests
 import logging
 import inspect
+import hashlib
+import base64
 import json
 import sys
 import re
@@ -39,6 +42,51 @@ class Dict(dict):
         del self[key]
 
 
+class Cryptor:
+    def __init__(self, key: bytes):
+        self.key = hashlib.md5(key).hexdigest().encode()
+
+    @property
+    def cryptor(self):
+        return AES.new(self.key, AES.MODE_CBC, self.key[:AES.block_size])
+
+    def pad(self, s: bytes) -> bytes:
+        '''補字以滿足CBC MODE'''
+        n = AES.block_size - len(s) % AES.block_size
+        s = s + n * chr(n).encode()
+        return s
+
+    def unpad(self, s: bytes) -> bytes:
+        '''解CBC MODE後綴'''
+        s = s.decode()
+        s = s[0: -ord(s[-1])]
+        return s.encode()
+
+    def encrypt(self, s) -> str:
+        '''加密, 傳入為任意jsonable物件, 返回加密文字'''
+        s = json.dumps(s)
+        s = s.encode()
+
+        s = self.pad(s)
+        s = self.cryptor.encrypt(s)
+        s = base64.b64encode(s)
+
+        s = s.decode()
+        return s
+
+    def decrypt(self, s: str):
+        '''解密, 傳入為加密文字, 傳出為解密後物件'''
+        s = s.encode()
+
+        s = base64.b64decode(s)
+        s = self.cryptor.decrypt(s)
+        s = self.unpad(s)
+
+        s = s.decode()
+        s = json.loads(s)
+        return s
+
+
 def log(func):
     @wraps(func)
     def wrapper(*args, **kw):
@@ -61,4 +109,3 @@ def log(func):
         logger.debug(f'{func.__name__} 返回: {result}')
         return result
     return wrapper
-
