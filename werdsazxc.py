@@ -1,7 +1,7 @@
-from random import randint
+from functools import wraps, partial
 from Crypto.Cipher import AES
 from inspect import signature
-from functools import wraps
+from random import randint
 import traceback
 import logging
 import inspect
@@ -87,7 +87,10 @@ class Cryptor:
         return s
 
 
-def log(func):
+def log(func=None, logger=logger):
+    if func is None:
+        return partial(log, logger=logger)
+
     @wraps(func)
     def wrapper(*args, **kw):
         # 紀錄傳入參數
