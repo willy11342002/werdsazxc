@@ -88,6 +88,36 @@ class Cryptor:
         return s
 
 
+class EncryptFormatter(logging.Formatter):
+    '''紀錄檔加解密功能'''
+    ENCRYPT_SPLITTER = '//T//'
+    def __init__(self, key=b'1234', *args, **kw):
+        super().__init__(*args, **kw)
+        self.encryptor = Cryptor(key)
+
+    def format(self, record):
+        if not hasattr(record, '_is_secret'):
+            record.msg = f'{self.ENCRYPT_SPLITTER}{self.encryptor.encrypt(record.msg)}'
+            record._is_secret = True
+        return super().format(record)
+
+    def decrypt(self, line):
+        return re.sub(
+            f'(?P<prefix>.*)(?P<spliter>{self.ENCRYPT_SPLITTER})(?P<msg>.*)',
+            lambda x: x.group('prefix') + self.encryptor.decrypt(x.group('msg')),
+            line
+        )
+
+    def decrypt_file(self, ori, des, encoding='utf-8'):
+        with open(ori, 'r', encoding=encoding) as f:
+            lines = f.readlines()
+
+        lines = [self.decrypt(line) for line in lines]
+
+        with open(des, 'w', encoding=encoding) as f:
+            f.write('\n'.join(lines))
+
+
 def log(func=None, logger=logger):
     '''裝飾器, 用於function定義上, 自動記錄傳入參數與傳出物件'''
     if func is None:
