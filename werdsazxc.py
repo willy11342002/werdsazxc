@@ -14,7 +14,7 @@ logger = logging.getLogger('Tools')
 
 
 class Dict(dict):
-    # 實體化時將所有子物件也實體化為JSLike Dict物件
+    '''JS Like Dict, 提供attribute的方式取值'''
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for key, value in self.items():
@@ -43,6 +43,7 @@ class Dict(dict):
 
 
 class Cryptor:
+    '''加解密物件, 使用AES_CBC方法, 適用於任何jsonable物件'''
     def __init__(self, key: bytes):
         self.key = hashlib.md5(key).hexdigest().encode()
 
@@ -88,6 +89,7 @@ class Cryptor:
 
 
 def log(func=None, logger=logger):
+    '''裝飾器, 用於function定義上, 自動記錄傳入參數與傳出物件'''
     if func is None:
         return partial(log, logger=logger)
 
