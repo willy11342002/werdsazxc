@@ -45,7 +45,8 @@ class Dict(dict):
 
 class Cryptor:
     '''加解密物件, 使用AES_CBC方法, 適用於任何jsonable物件'''
-    def __init__(self, password: bytes, IV_SIZE: int=16, KEY_SIZE: int=32, SALT_SIZE: int=16):
+    def __init__(self, password: bytes, IV_SIZE: int=16, KEY_SIZE: int=16, SALT_SIZE: int=16):
+        password = password * KEY_SIZE
         self.password = password[:KEY_SIZE]
         self.IV_SIZE = IV_SIZE
         self.KEY_SIZE = KEY_SIZE
@@ -69,8 +70,10 @@ class Cryptor:
 
         if salt:
             salt = os.urandom(self.SALT_SIZE)
+            s = salt + self.cryptor(salt).encrypt(s)
+        else:
+            s = self.cryptor(salt).encrypt(s)
 
-        s = salt + self.cryptor(salt).encrypt(s)
         s = base64.b64encode(s)
 
         s = s.decode()
@@ -101,9 +104,9 @@ class EncryptFormatter(logging.Formatter):
         self.encryptor = Cryptor(key)
 
     def format(self, record):
-        if not hasattr(record, '_is_secret'):
+        if not hasattr(record, '_is_password'):
             record.msg = f'{self.ENCRYPT_SPLITTER}{self.encryptor.encrypt(record.msg)}'
-            record._is_secret = True
+            record._is_password = True
         return super().format(record)
 
     def decrypt(self, line):
