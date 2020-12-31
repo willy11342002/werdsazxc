@@ -10,6 +10,7 @@ import base64
 import json
 import sys
 import re
+import os
 logger = logging.getLogger('Tools')
 
 
@@ -44,44 +45,48 @@ class Dict(dict):
 
 class Cryptor:
     '''加解密物件, 使用AES_CBC方法, 適用於任何jsonable物件'''
-    def __init__(self, key: bytes):
-        self.key = hashlib.md5(key).hexdigest().encode()
+    def __init__(self, password: bytes, IV_SIZE: int=16, KEY_SIZE: int=32, SALT_SIZE: int=16):
+        self.password = password[:KEY_SIZE]
+        self.IV_SIZE = IV_SIZE
+        self.KEY_SIZE = KEY_SIZE
+        self.SALT_SIZE = SALT_SIZE
 
-    @property
-    def cryptor(self):
-        return AES.new(self.key, AES.MODE_CBC, self.key[:AES.block_size])
+    def cryptor(self, salt):
+        if salt:
+            derived = hashlib.pbkdf2_hmac('sha256', self.password, salt, 100000, dklen=self.IV_SIZE + self.KEY_SIZE)
+            iv = derived[:self.IV_SIZE]
+            key = derived[self.IV_SIZE:]
+            cryptor = AES.new(key, AES.MODE_CFB, iv)
+        else:
+            cryptor = AES.new(self.password, AES.MODE_CFB, self.password)
 
-    def pad(self, s: bytes) -> bytes:
-        '''補字以滿足CBC MODE'''
-        n = AES.block_size - len(s) % AES.block_size
-        s = s + n * chr(n).encode()
-        return s
+        return cryptor
 
-    def unpad(self, s: bytes) -> bytes:
-        '''解CBC MODE後綴'''
-        s = s.decode()
-        s = s[0: -ord(s[-1])]
-        return s.encode()
-
-    def encrypt(self, s) -> str:
+    def encrypt(self, s, salt=False) -> str:
         '''加密, 傳入為任意jsonable物件, 返回加密文字'''
         s = json.dumps(s)
         s = s.encode()
 
-        s = self.pad(s)
-        s = self.cryptor.encrypt(s)
+        if salt:
+            salt = os.urandom(self.SALT_SIZE)
+
+        s = salt + self.cryptor(salt).encrypt(s)
         s = base64.b64encode(s)
 
         s = s.decode()
         return s
 
-    def decrypt(self, s: str):
+    def decrypt(self, s: str, salt=False):
         '''解密, 傳入為加密文字, 傳出為解密後物件'''
         s = s.encode()
 
         s = base64.b64decode(s)
-        s = self.cryptor.decrypt(s)
-        s = self.unpad(s)
+
+        if salt:
+            salt = s[:self.SALT_SIZE]
+            s = self.cryptor(salt).decrypt(s[self.SALT_SIZE:])
+        else:
+            s = self.cryptor(salt).decrypt(s)
 
         s = s.decode()
         s = json.loads(s)
