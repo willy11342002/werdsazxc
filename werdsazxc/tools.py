@@ -105,7 +105,6 @@ class EncryptFormatter(logging.Formatter):
         super().__init__(*args, **kw)
         self.encryptor = Cryptor(key)
         self.salt = salt
-        self.pattern = re.compile(f'(?P<prefix>.*)(?P<spliter>{self.ENCRYPT_SPLITTER})(?P<msg>.*)')
 
     def format(self, record):
         if not hasattr(record, '_is_password'):
@@ -117,12 +116,13 @@ class EncryptFormatter(logging.Formatter):
         return super().format(record)
 
     def decrypt(self, line):
-        def repl(x):
-            prefix = x.group('prefix')
-            msg = x.group('msg')
-            msg = self.encryptor.decrypt(msg, self.salt)
-            return prefix + msg
-        return self.pattern.sub(repl, line)
+        if not line.strip():
+            return ''
+        strs = line.split(self.ENCRYPT_SPLITTER)
+        info = strs[0]
+        encrypted = self.ENCRYPT_SPLITTER.join(strs[1:])
+        decrypted = self.encryptor.decrypt(encrypted, self.salt)
+        return info + decrypted
 
     def decrypt_file(self, ori, des, encoding='utf-8'):
         with open(ori, 'r', encoding=encoding) as f:
