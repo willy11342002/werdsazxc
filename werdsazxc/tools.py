@@ -45,9 +45,11 @@ class Dict(dict):
 
 class Cryptor:
     '''加解密物件, 使用AES_CBC方法, 適用於任何jsonable物件'''
-    def __init__(self, password: bytes, IV_SIZE: int=16, KEY_SIZE: int=16, SALT_SIZE: int=16):
+    def __init__(self, password: bytes, mode=AES.MODE_CFB,
+                 IV_SIZE: int=16, KEY_SIZE: int=16, SALT_SIZE: int=16):
         password = password * KEY_SIZE
         self.password = password[:KEY_SIZE]
+        self.mode = mode
         self.IV_SIZE = IV_SIZE
         self.KEY_SIZE = KEY_SIZE
         self.SALT_SIZE = SALT_SIZE
@@ -57,9 +59,9 @@ class Cryptor:
             derived = hashlib.pbkdf2_hmac('sha256', self.password, salt, 100000, dklen=self.IV_SIZE + self.KEY_SIZE)
             iv = derived[:self.IV_SIZE]
             key = derived[self.IV_SIZE:]
-            cryptor = AES.new(key, AES.MODE_CFB, iv)
+            cryptor = AES.new(key, self.mode, iv)
         else:
-            cryptor = AES.new(self.password, AES.MODE_CFB, self.password)
+            cryptor = AES.new(self.password, self.mode, self.password)
 
         return cryptor
 
@@ -99,22 +101,28 @@ class Cryptor:
 class EncryptFormatter(logging.Formatter):
     '''紀錄檔加解密功能'''
     ENCRYPT_SPLITTER = '//T//'
-    def __init__(self, key=b'1234', *args, **kw):
+    def __init__(self, key=b'1234', salt=False, *args, **kw):
         super().__init__(*args, **kw)
         self.encryptor = Cryptor(key)
+        self.salt = salt
+        self.pattern = re.compile(f'(?P<prefix>.*)(?P<spliter>{self.ENCRYPT_SPLITTER})(?P<msg>.*)')
 
     def format(self, record):
         if not hasattr(record, '_is_password'):
-            record.msg = f'{self.ENCRYPT_SPLITTER}{self.encryptor.encrypt(record.msg)}'
+            record.msg = (
+                f'{self.ENCRYPT_SPLITTER}'
+                f'{self.encryptor.encrypt(record.msg, salt=self.salt)}'
+            )
             record._is_password = True
         return super().format(record)
 
     def decrypt(self, line):
-        return re.sub(
-            f'(?P<prefix>.*)(?P<spliter>{self.ENCRYPT_SPLITTER})(?P<msg>.*)',
-            lambda x: x.group('prefix') + self.encryptor.decrypt(x.group('msg')),
-            line
-        )
+        def repl(x):
+            prefix = x.group('prefix')
+            msg = x.group('msg')
+            msg = self.encryptor.decrypt(msg, self.salt)
+            return prefix + msg
+        return self.pattern.sub(repl, line)
 
     def decrypt_file(self, ori, des, encoding='utf-8'):
         with open(ori, 'r', encoding=encoding) as f:
