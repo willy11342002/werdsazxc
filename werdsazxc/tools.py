@@ -160,3 +160,12 @@ def log(func=None, logger=logger):
         logger.debug(f'{func.__name__} 返回: {result}')
         return result
     return wrapper
+
+
+def load_dotenv():
+    with open('.env', 'r') as f:
+        for line in f.readlines():
+            line = line.split('=')
+            key = line[0]
+            value = '='.join(line[1:])
+            os.environ[key] = value
