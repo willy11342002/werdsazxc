@@ -1,4 +1,5 @@
 from functools import wraps, partial
+from pathlib import Path
 from Crypto.Cipher import AES
 from inspect import signature
 from random import randint
@@ -163,10 +164,12 @@ def log(func=None, logger=logger):
 
 
 def log_trackback(*args):
+    '''捕捉到錯誤時呼叫，能將完整報錯訊息打入紀錄檔'''
     logger.critical('\n' + traceback.format_exc())
 
 
-def threading_exechook():
+def excepthook():
+    '''專案開始時呼叫，修改系統報錯動作，將錯誤訊息寫入紀錄檔'''
     init_original = threading.Thread.__init__
 
     def init(self, *args, **kwargs):
@@ -182,12 +185,18 @@ def threading_exechook():
         self.run = run_with_except_hook
 
     threading.Thread.__init__ = init
+    sys.excepthook = log_trackback
 
 
 def load_dotenv():
-    with open('.env', 'r') as f:
-        for line in f.readlines():
-            line = line.split('=')
-            key = line[0]
-            value = '='.join(line[1:])
-            os.environ[key] = value
+    '''專案開始時呼叫，能讀取根目錄下env檔，將變數寫入環境變數中'''
+    p = Path('.env')
+    if not p.exists():
+        raise FileNotFoundError('找不到檔案：.env')
+    for line in p.read_text().split('\n'):
+        if '=' not in line:
+            continue
+        line = line.split('=')
+        key = line[0]
+        value = '='.join(line[1:])
+        os.environ[key] = value
