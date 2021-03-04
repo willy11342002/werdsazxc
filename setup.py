@@ -2,7 +2,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    url='',
+    url='https://github.com/willy11342002/werdsazxc',
     name='werdsazxc',
     version='1.5.0',
     description='Tools For Improve Effeciveness Of Project Develop',

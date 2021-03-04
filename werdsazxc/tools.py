@@ -3,6 +3,7 @@ from Crypto.Cipher import AES
 from inspect import signature
 from random import randint
 import traceback
+import threading
 import logging
 import inspect
 import hashlib
@@ -152,14 +153,35 @@ def log(func=None, logger=logger):
             result = func(*args, **kw)
         # 紀錄報錯訊息, 紀錄後依舊拋出錯誤
         except Exception as e:
-            logger.error(f'{func.__name__} 錯誤: {e.__class__.__name__} {e}')
-            logger.error('\n' + traceback.format_exc())
+            log_trackback()
             raise e
 
         # 紀錄結果
         logger.debug(f'{func.__name__} 返回: {result}')
         return result
     return wrapper
+
+
+def log_trackback(*args):
+    logger.critical('\n' + traceback.format_exc())
+
+
+def threading_exechook():
+    init_original = threading.Thread.__init__
+
+    def init(self, *args, **kwargs):
+        init_original(self, *args, **kwargs)
+        run_original = self.run
+
+        def run_with_except_hook(*args2, **kwargs2):
+            try:
+                run_original(*args2, **kwargs2)
+            except Exception:
+                sys.excepthook(*sys.exc_info())
+
+        self.run = run_with_except_hook
+
+    threading.Thread.__init__ = init
 
 
 def load_dotenv():
