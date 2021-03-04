@@ -1,18 +1,5 @@
-from functools import wraps, partial
-from pathlib import Path
 from Crypto.Cipher import AES
-from inspect import signature
-from random import randint
-import traceback
-import threading
 import logging
-import inspect
-import hashlib
-import base64
-import json
-import sys
-import re
-import os
 logger = logging.getLogger('Tools')
 
 
@@ -57,6 +44,8 @@ class Cryptor:
         self.SALT_SIZE = SALT_SIZE
 
     def cryptor(self, salt):
+        import hashlib
+
         if salt:
             derived = hashlib.pbkdf2_hmac('sha256', self.password, salt, 100000, dklen=self.IV_SIZE + self.KEY_SIZE)
             iv = derived[:self.IV_SIZE]
@@ -69,6 +58,10 @@ class Cryptor:
 
     def encrypt(self, s, salt=False) -> str:
         '''加密, 傳入為任意jsonable物件, 返回加密文字'''
+        import base64
+        import json
+        import os
+
         s = json.dumps(s)
         s = s.encode()
 
@@ -85,6 +78,9 @@ class Cryptor:
 
     def decrypt(self, s: str, salt=False):
         '''解密, 傳入為加密文字, 傳出為解密後物件'''
+        import base64
+        import json
+
         s = s.encode()
 
         s = base64.b64decode(s)
@@ -138,6 +134,9 @@ class EncryptFormatter(logging.Formatter):
 
 def log(func=None, logger=logger):
     '''裝飾器, 用於function定義上, 自動記錄傳入參數與傳出物件'''
+    from functools import wraps, partial
+    from inspect import signature
+
     if func is None:
         return partial(log, logger=logger)
 
@@ -165,11 +164,16 @@ def log(func=None, logger=logger):
 
 def log_trackback(*args):
     '''捕捉到錯誤時呼叫，能將完整報錯訊息打入紀錄檔'''
+    import traceback
+
     logger.critical('\n' + traceback.format_exc())
 
 
 def excepthook():
     '''專案開始時呼叫，修改系統報錯動作，將錯誤訊息寫入紀錄檔'''
+    import threading
+    import sys
+
     init_original = threading.Thread.__init__
 
     def init(self, *args, **kwargs):
@@ -190,6 +194,9 @@ def excepthook():
 
 def load_dotenv():
     '''專案開始時呼叫，能讀取根目錄下env檔，將變數寫入環境變數中'''
+    from pathlib import Path
+    import os
+
     p = Path('.env')
     if not p.exists():
         raise FileNotFoundError('找不到檔案：.env')
