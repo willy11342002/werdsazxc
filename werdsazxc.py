@@ -19,6 +19,12 @@ class Dict(dict):
     def sub(self, keys):
         return {k: v for k, v in self.items() if k in keys}
 
+    def __getstate__(self):
+        return vars(self)
+
+    def __setstate__(self, state):
+        vars(self).update(state)
+
     def __getattr__(self, key):
         try:
             return self.__getattribute__(key)
