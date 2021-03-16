@@ -206,7 +206,7 @@ def load_dotenv():
     p = Path('.env')
     if not p.exists():
         raise FileNotFoundError('找不到檔案：.env')
-    for line in p.read_text().split('\n'):
+    for line in p.read_text(encoding='utf-8').split('\n'):
         if '=' not in line:
             continue
         line = line.split('=')
