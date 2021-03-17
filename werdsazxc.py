@@ -27,7 +27,7 @@ class FileHandler:
     @classmethod
     def load_yaml(cls, file_path, Loader=yaml.CFullLoader, **kwargs):
         with open(file_path, 'r', **kwargs) as f:
-            return cls(yaml.load(f, Loader, **kwargs))
+            return cls(yaml.load(f, Loader))
     def dump_yaml(self, file_path, **kwargs):
         with open(file_path, 'w', **kwargs) as f:
             yaml.dump(self, f)
