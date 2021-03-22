@@ -3,7 +3,7 @@ import logging
 import pickle
 import yaml
 import json
-logger = logging.getLogger('Tools')
+logger = logging.getLogger('robot')
 
 
 class FileHandler:
