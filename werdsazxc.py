@@ -204,7 +204,7 @@ def log_trackback(*args):
     logger.critical('\n' + traceback.format_exc())
 
 
-def load_dotenv():
+def load_dotenv(encoding='utf-8'):
     '''專案開始時呼叫，能讀取根目錄下env檔，將變數寫入環境變數中'''
     from pathlib import Path
     import builtins
@@ -212,7 +212,7 @@ def load_dotenv():
     p = Path('.env')
     if not p.exists():
         raise FileNotFoundError('找不到檔案：.env')
-    for line in p.read_text(encoding='utf-8').split('\n'):
+    for line in p.read_text(encoding=encoding).split('\n'):
         if '=' not in line:
             continue
         line = line.split('=')
