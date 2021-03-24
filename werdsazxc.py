@@ -207,6 +207,7 @@ def log_trackback(*args):
 def load_dotenv():
     '''專案開始時呼叫，能讀取根目錄下env檔，將變數寫入環境變數中'''
     from pathlib import Path
+    import builtins
 
     p = Path('.env')
     if not p.exists():
@@ -217,4 +218,4 @@ def load_dotenv():
         line = line.split('=')
         key = line[0]
         value = '='.join(line[1:])
-        globals()[key] = value
+        setattr(builtins, key, value)
