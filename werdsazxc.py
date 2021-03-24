@@ -96,13 +96,12 @@ class Cryptor:
         '''加密, 傳入為任意jsonable物件, 返回加密文字'''
         import base64
         import json
-        import os
 
         s = json.dumps(s)
         s = s.encode()
 
         if salt:
-            salt = os.urandom(self.SALT_SIZE)
+            salt = ''.join([chr(random.randint(0,255))] for i in range(self.SALT_SIZE)).encode()
             s = salt + self.cryptor(salt).encrypt(s)
         else:
             s = self.cryptor(salt).encrypt(s)
@@ -205,33 +204,9 @@ def log_trackback(*args):
     logger.critical('\n' + traceback.format_exc())
 
 
-def excepthook():
-    '''專案開始時呼叫，修改系統報錯動作，將錯誤訊息寫入紀錄檔'''
-    import threading
-    import sys
-
-    init_original = threading.Thread.__init__
-
-    def init(self, *args, **kwargs):
-        init_original(self, *args, **kwargs)
-        run_original = self.run
-
-        def run_with_except_hook(*args2, **kwargs2):
-            try:
-                run_original(*args2, **kwargs2)
-            except Exception:
-                sys.excepthook(*sys.exc_info())
-
-        self.run = run_with_except_hook
-
-    threading.Thread.__init__ = init
-    sys.excepthook = log_trackback
-
-
 def load_dotenv():
     '''專案開始時呼叫，能讀取根目錄下env檔，將變數寫入環境變數中'''
     from pathlib import Path
-    import os
 
     p = Path('.env')
     if not p.exists():
@@ -242,4 +217,4 @@ def load_dotenv():
         line = line.split('=')
         key = line[0]
         value = '='.join(line[1:])
-        os.environ[key] = value
+        globals()[key] = value
