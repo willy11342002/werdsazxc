@@ -1,16 +1,22 @@
-import multiprocessing
 from keyboard import *
+import threading
 import keyboard
+import time
 
 
-class HotkeyListener(multiprocessing.Process):
+class HotkeyListener(threading.Thread):
     def __init__(self, hotkeys: dict):
         super().__init__()
-        for k, v in hotkeys.items():
+        self.running = True
+        self.hotkeys = hotkeys
+        for k, v in self.hotkeys.items():
             keyboard.add_hotkey(k, v)
 
     def stop(self):
-        self.terminate()
+        self.running = False
+        for key in self.hotkeys.keys():
+            remove_hotkey(key)
 
     def run(self):
-        keyboard.wait()
+        while self.running:
+            time.sleep(.5)
