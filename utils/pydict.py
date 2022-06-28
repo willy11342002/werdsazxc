@@ -28,7 +28,7 @@ class FileDict(dict):
         with open(file_path, 'r', **file_kwargs) as f:
             return cls(yaml.load(f, **yaml_kwargs))
 
-    def dump_yaml(self, file_path, file_kwargs={}, yaml_kwargs={'Loader': yaml.Loader}):
+    def dump_yaml(self, file_path, file_kwargs={}, yaml_kwargs={'Dumper': yaml.Dumper}):
         with open(file_path, 'w', **file_kwargs) as f:
             yaml.dump(self, f, **yaml_kwargs)
 
